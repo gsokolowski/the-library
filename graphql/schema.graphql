@@ -1,0 +1,47 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Query {
+    """
+    All books (ordered by title). Cached for 60 seconds when `CACHE_STORE=redis` (see `BookQuery`).
+    """
+    books: [Book!]! @field(resolver: "BookQuery@all")
+
+    "Single book by primary key."
+    book(id: ID! @eq): Book @find(model: "Book")
+}
+
+type Book {
+    id: ID!
+    title: String!
+    author: String!
+    created_at: DateTime!
+    updated_at: DateTime!
+}
+
+type Mutation {
+    """
+    Create a book.
+    When `RABBITMQ_ENABLED=true`, publishes a persistent JSON message: routing key `book.created`.
+    """
+    createBook(
+        title: String! @rules(apply: ["required", "string", "max:255"])
+        author: String! @rules(apply: ["required", "string", "max:255"])
+    ): Book @create(model: "Book")
+
+    """
+    Update a book.
+    When RabbitMQ is enabled, publishes `book.updated`.
+    """
+    updateBook(
+        id: ID! @rules(apply: ["required", "integer", "exists:books,id"])
+        title: String @rules(apply: ["sometimes", "string", "max:255"])
+        author: String @rules(apply: ["sometimes", "string", "max:255"])
+    ): Book @update(model: "Book")
+
+    """
+    Delete a book.
+    When RabbitMQ is enabled, publishes `book.deleted`.
+    """
+    deleteBook(id: ID! @whereKey @rules(apply: ["required", "integer", "exists:books,id"])): Book @delete(model: "Book")
+}
