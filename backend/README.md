@@ -4,10 +4,15 @@ Small **Laravel 13** demo: **GraphQL CRUD** for books (**Lighthouse**), **Redis*
 
 This project is standalone under `the-library` and is unrelated to **the-shop**.
 
+## Repository layout
+
+- **`backend/`** — Laravel API (GraphQL at `POST /graphql`, default `http://127.0.0.1:8000/graphql` with `php artisan serve`).
+- **`frontend/`** — Vite + React app that talks to the API (dev server proxies `/graphql` to the backend).
+
 ## Requirements
 
-- PHP **8.3+**, Composer, **pdo_mysql**, and **MySQL 8+** or **MariaDB 10.4+**.
-- Optional: **Docker** for Redis + RabbitMQ (`docker compose up -d`).
+- PHP **8.3+**, Composer, **Node 20+**, **pnpm/npm**, **pdo_mysql**, and **MySQL 8+** or **MariaDB 10.4+**.
+- Optional: **Docker** for Redis + RabbitMQ (`docker compose up -d` from `backend/`).
 
 ## Quick start
 
@@ -17,15 +22,26 @@ Create the database (name includes a hyphen, so use backticks in SQL):
 CREATE DATABASE `the-library` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-Then:
+Then the **Laravel** app:
 
 ```bash
-cd /path/to/the-library
+cd /path/to/the-library/backend
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
 php artisan serve
 ```
+
+**React UI** (second terminal; needs the API running):
+
+```bash
+cd /path/to/the-library/frontend
+cp .env.example .env   # adjust VITE_BACKEND_URL if not using http://127.0.0.1:8000
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**. The welcome page at the API root links here via `FRONTEND_URL` in `backend/.env` (default `http://localhost:5173`). Visiting **`/library`** on the API redirects to that URL.
 
 Default `.env` uses `DB_CONNECTION=mysql` and `DB_DATABASE=the-library`. For MariaDB you can set `DB_CONNECTION=mariadb` instead.
 
@@ -37,6 +53,7 @@ Set header: `Content-Type: application/json` (and `Accept: application/json`).
 ### Optional: Redis + RabbitMQ
 
 ```bash
+cd /path/to/the-library/backend
 docker compose up -d
 ```
 
@@ -86,6 +103,7 @@ That package hit a **Laravel 13 / `Worker::$currentJob` visibility** mismatch at
 ## Tests
 
 ```bash
+cd /path/to/the-library/backend
 php artisan test
 ```
 
