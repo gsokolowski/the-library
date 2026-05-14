@@ -12,7 +12,7 @@ This project is standalone under `the-library` and is unrelated to **the-shop**.
 ## Requirements
 
 - PHP **8.3+**, Composer, **Node 20+**, **pnpm/npm**, **pdo_mysql**, and **MySQL 8+** or **MariaDB 10.4+**.
-- Optional: **Docker** for Redis + RabbitMQ (`docker compose up -d` from `backend/`).
+- **Docker Desktop** (or another Docker engine) for **Redis**, which the default cache (`CACHE_STORE=redis`) expects. Use `CACHE_STORE=file` in `.env` if you run without Redis.
 
 ## Quick start
 
@@ -29,6 +29,8 @@ cd /path/to/the-library/backend
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
+composer redis-up          # start Redis (Docker must be running): docker compose up -d redis
+php artisan config:clear   # pick up CACHE_STORE=redis after .env edits
 php artisan serve
 ```
 
@@ -50,16 +52,30 @@ Tests still use **SQLite in-memory** (`phpunit.xml`), so `php artisan test` does
 **GraphQL endpoint:** `POST http://127.0.0.1:8000/graphql`  
 Set header: `Content-Type: application/json` (and `Accept: application/json`).
 
-### Optional: Redis + RabbitMQ
+This project defaults **`LIGHTHOUSE_QUERY_CACHE_MODE=opcache`** (parsed queries on disk under `bootstrap/cache`). Do **not** use **`store`** for that cache with Redis: PHP can deserialize old entries as **`__PHP_Incomplete_Class`** and break every request until you **`php artisan cache:clear`**.
+
+### Redis (default) and optional RabbitMQ
+
+**`.env`** / **`.env.example`** use **`CACHE_STORE=redis`** (with **Predis**) for the `books` list cache and Lighthouse query parse cache. Start Redis first:
 
 ```bash
 cd /path/to/the-library/backend
+composer redis-up
+# same as: docker compose up -d redis
+```
+
+Requires **Docker Desktop** (or daemon on `unix:///var/run/docker.sock`). Redis listens on **`127.0.0.1:6379`** (see `REDIS_*` in `.env`).
+
+If Redis is unavailable, switch to **`CACHE_STORE=file`** (no Docker) until Redis is running.
+
+#### Optional: RabbitMQ as well
+
+```bash
 docker compose up -d
 ```
 
 In `.env`:
 
-- `CACHE_STORE=redis` (with `REDIS_CLIENT=predis` or `phpredis`).
 - `RABBITMQ_ENABLED=true` and check `RABBITMQ_*` match your broker.
 
 Exchange: **`library.events`** (topic). Routing keys: **`book.created`**, **`book.updated`**, **`book.deleted`**. Messages are persistent JSON.
