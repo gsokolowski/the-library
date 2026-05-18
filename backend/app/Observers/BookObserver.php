@@ -39,6 +39,7 @@ final class BookObserver
             'id' => $book->id,
             'title' => $book->title,
             'author' => $book->author,
+            'library_user_id' => $book->library_user_id,
             'updated_at' => $book->updated_at?->toIso8601String(),
         ];
     }

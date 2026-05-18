@@ -9,12 +9,29 @@ type Query {
 
     "Single book by primary key."
     book(id: ID! @eq): Book @find(model: "Book")
+
+    "Patrons (name, surname, email) who can borrow books — distinct from app login accounts."
+    libraryUsers: [LibraryUser!]! @all(model: "LibraryUser")
+
+    libraryUser(id: ID! @eq): LibraryUser @find(model: "LibraryUser")
+}
+
+type LibraryUser {
+    id: ID!
+    name: String!
+    surname: String!
+    email: String!
+    created_at: DateTime!
+    updated_at: DateTime!
+    books: [Book!]! @hasMany(relation: "books")
 }
 
 type Book {
     id: ID!
     title: String!
     author: String!
+    library_user_id: ID
+    libraryUser: LibraryUser @belongsTo(relation: "libraryUser")
     created_at: DateTime!
     updated_at: DateTime!
 }
@@ -44,4 +61,31 @@ type Mutation {
     When RabbitMQ is enabled, publishes `book.deleted`.
     """
     deleteBook(id: ID! @whereKey @rules(apply: ["required", "integer", "exists:books,id"])): Book @delete(model: "Book")
+
+    """
+    Create a library patron (borrower). Not the same as the Laravel `users` auth table.
+    """
+    createLibraryUser(
+        name: String! @rules(apply: ["required", "string", "max:255"])
+        surname: String! @rules(apply: ["required", "string", "max:255"])
+        email: String! @rules(apply: ["required", "email", "max:255", "unique:library_users,email"])
+    ): LibraryUser @create(model: "LibraryUser")
+
+    updateLibraryUser(
+        id: ID!
+        name: String
+        surname: String
+        email: String
+    ): LibraryUser @update(model: "LibraryUser") @validator(class: "UpdateLibraryUserValidator")
+
+    deleteLibraryUser(id: ID! @whereKey @rules(apply: ["required", "integer", "exists:library_users,id"])): LibraryUser
+        @delete(model: "LibraryUser")
+
+    """
+    Set who is borrowing a book. Pass `libraryUserId: null` to mark the book as returned. If the argument is omitted, the borrower is left unchanged.
+    """
+    setBookLibraryUser(
+        id: ID! @rules(apply: ["required", "integer", "exists:books,id"])
+        libraryUserId: ID @rules(apply: ["nullable", "integer", "exists:library_users,id"])
+    ): Book @field(resolver: "SetBookLibraryUser")
 }

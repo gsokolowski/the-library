@@ -40,6 +40,8 @@ export async function graphqlRequest(query, variables = {}) {
         );
     }
 
+    console.log(raw);
+    
     if (!response.ok || payload.errors?.length) {
         const debug = payload.errors
             ?.map((e) => e.extensions?.debugMessage || e.message)
