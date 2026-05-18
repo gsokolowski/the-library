@@ -13,16 +13,14 @@ import {
     UPDATE_BOOK_MUTATION,
     UPDATE_LIBRARY_USER_MUTATION,
 } from './queries.js';
-
-const tabBtn = (active) =>
-    `rounded-t-lg border border-b-0 px-4 py-2 text-sm font-medium transition ${
-        active
-            ? 'border-stone-300 bg-white text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100'
-            : 'border-transparent text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800'
-    }`;
-
-const inputClass =
-    'rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-stone-900 outline-none ring-amber-600/40 focus:border-amber-700 focus:ring-2 dark:border-stone-600 dark:bg-stone-950 dark:text-stone-100';
+import AddBookForm from './components/books/AddBookForm.jsx';
+import BookEditPanel from './components/books/BookEditPanel.jsx';
+import BookList from './components/books/BookList.jsx';
+import BookViewPanel from './components/books/BookViewPanel.jsx';
+import AppHeader from './components/layout/AppHeader.jsx';
+import PrimaryTabs from './components/layout/PrimaryTabs.jsx';
+import LibraryUserPanel from './components/library-users/LibraryUserPanel.jsx';
+import { inputClass } from './components/ui/styles.js';
 
 export default function LibraryApp() {
     const [activeTab, setActiveTab] = useState('books');
@@ -448,30 +446,8 @@ export default function LibraryApp() {
 
     return (
         <div className="mx-auto max-w-6xl px-4 py-10">
-            <header className="mb-6 border-b border-stone-200 pb-6 dark:border-stone-700">
-                <h1 className="font-semibold tracking-tight text-3xl text-stone-900 dark:text-stone-600">
-                    Library
-                </h1>
-                <p className="mt-2 max-w-3xl text-[15px] text-stone-800 dark:text-stone-600">
-                    Manage books and patrons, then link borrowings on the Library tab (GraphQL API).
-                </p>
-            </header>
-
-            <nav className="flex flex-wrap gap-1" aria-label="Primary">
-                <button type="button" className={tabBtn(activeTab === 'books')} onClick={() => switchTab('books')}>
-                    Books
-                </button>
-                <button type="button" className={tabBtn(activeTab === 'users')} onClick={() => switchTab('users')}>
-                    Users
-                </button>
-                <button
-                    type="button"
-                    className={tabBtn(activeTab === 'library')}
-                    onClick={() => switchTab('library')}
-                >
-                    Library
-                </button>
-            </nav>
+            <AppHeader />
+            <PrimaryTabs activeTab={activeTab} onTabChange={switchTab} />
 
             {error ? (
                 <div
@@ -484,489 +460,80 @@ export default function LibraryApp() {
 
             {activeTab === 'books' ? (
                 <>
-                    <section className="mb-10 mt-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                            Add a book
-                        </h2>
-                        <form
-                            onSubmit={handleCreateBook}
-                            className="flex flex-col gap-4 sm:flex-row sm:items-end"
-                        >
-                            <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                <span className="text-stone-600 dark:text-stone-400">Title</span>
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(ev) => setTitle(ev.target.value)}
-                                    className={inputClass}
-                                    placeholder="The Left Hand of Darkness"
-                                    maxLength={255}
-                                    autoComplete="off"
-                                />
-                            </label>
-                            <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                <span className="text-stone-600 dark:text-stone-400">Author</span>
-                                <input
-                                    type="text"
-                                    value={author}
-                                    onChange={(ev) => setAuthor(ev.target.value)}
-                                    className={inputClass}
-                                    placeholder="Ursula K. Le Guin"
-                                    maxLength={255}
-                                    autoComplete="off"
-                                />
-                            </label>
-                            <button
-                                type="submit"
-                                disabled={savingBook || !title.trim() || !author.trim()}
-                                className="shrink-0 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
-                            >
-                                {savingBook ? 'Saving…' : 'Add'}
-                            </button>
-                        </form>
-                    </section>
+                    <AddBookForm
+                        title={title}
+                        author={author}
+                        savingBook={savingBook}
+                        onTitleChange={setTitle}
+                        onAuthorChange={setAuthor}
+                        onSubmit={handleCreateBook}
+                    />
 
                     {viewingBookId ? (
-                        <section
-                            className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900"
-                            aria-live="polite"
-                        >
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                                <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                    View book
-                                </h2>
-                                <button
-                                    type="button"
-                                    onClick={closeBookDetail}
-                                    className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                            {detailBookError ? (
-                                <p className="text-sm text-red-700 dark:text-red-200">{detailBookError}</p>
-                            ) : detailBookLoading ? (
-                                <p className="text-sm text-stone-500 dark:text-stone-400">Loading…</p>
-                            ) : detailBook ? (
-                                <div className="space-y-2 text-sm">
-                                    <p>
-                                        <span className="text-stone-500 dark:text-stone-400">Title</span>
-                                        <br />
-                                        <span className="font-medium text-stone-900 dark:text-stone-100">
-                                            {detailBook.title}
-                                        </span>
-                                    </p>
-                                    <p>
-                                        <span className="text-stone-500 dark:text-stone-400">Author</span>
-                                        <br />
-                                        <span className="text-stone-800 dark:text-stone-200">{detailBook.author}</span>
-                                    </p>
-                                    <p>
-                                        <span className="text-stone-400 dark:text-stone-500">Borrowed by</span>
-                                        <br />
-                                        <span className="text-stone-800 dark:text-stone-200">
-                                            {detailBook.libraryUser
-                                                ? `${detailBook.libraryUser.name} ${detailBook.libraryUser.surname} (${detailBook.libraryUser.email})`
-                                                : '—'}
-                                        </span>
-                                    </p>
-                                    <p className="font-mono text-xs text-stone-500 dark:text-stone-400">
-                                        id {detailBook.id}
-                                    </p>
-                                    <p className="text-xs text-stone-500 dark:text-stone-400">
-                                        Created {new Date(detailBook.created_at).toLocaleString()}
-                                        <br />
-                                        Updated {new Date(detailBook.updated_at).toLocaleString()}
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-stone-500 dark:text-stone-400">No book found for this id.</p>
-                            )}
-                        </section>
+                        <BookViewPanel
+                            onClose={closeBookDetail}
+                            detailBook={detailBook}
+                            detailLoading={detailBookLoading}
+                            detailError={detailBookError}
+                        />
                     ) : null}
 
                     {editingBookId ? (
-                        <section className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                                <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                    Update book
-                                </h2>
-                                <button
-                                    type="button"
-                                    onClick={closeBookEdit}
-                                    className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                            <form
-                                onSubmit={handleUpdateBook}
-                                className="flex flex-col gap-4 sm:flex-row sm:items-end"
-                            >
-                                <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                    <span className="text-stone-600 dark:text-stone-400">Title</span>
-                                    <input
-                                        type="text"
-                                        value={editTitle}
-                                        onChange={(ev) => setEditTitle(ev.target.value)}
-                                        className={inputClass}
-                                        maxLength={255}
-                                        autoComplete="off"
-                                    />
-                                </label>
-                                <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                    <span className="text-stone-600 dark:text-stone-400">Author</span>
-                                    <input
-                                        type="text"
-                                        value={editAuthor}
-                                        onChange={(ev) => setEditAuthor(ev.target.value)}
-                                        className={inputClass}
-                                        maxLength={255}
-                                        autoComplete="off"
-                                    />
-                                </label>
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        updateBookSaving || !editTitle.trim() || !editAuthor.trim()
-                                    }
-                                    className="shrink-0 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
-                                >
-                                    {updateBookSaving ? 'Saving…' : 'Save'}
-                                </button>
-                            </form>
-                            <p className="mt-3 font-mono text-xs text-stone-400 dark:text-stone-500">
-                                id {editingBookId}
-                            </p>
-                        </section>
+                        <BookEditPanel
+                            editingId={editingBookId}
+                            editTitle={editTitle}
+                            editAuthor={editAuthor}
+                            onEditTitleChange={setEditTitle}
+                            onEditAuthorChange={setEditAuthor}
+                            onSubmit={handleUpdateBook}
+                            onCancel={closeBookEdit}
+                            saving={updateBookSaving}
+                        />
                     ) : null}
 
-                    <section>
-                        <div className="mb-4 flex items-center justify-between gap-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                Books ({booksLoading ? '…' : books.length})
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={() => void loadBooks()}
-                                disabled={booksLoading}
-                                className="text-sm font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900 disabled:no-underline disabled:opacity-50 dark:text-amber-500 dark:hover:text-amber-400"
-                            >
-                                Refresh
-                            </button>
-                        </div>
-
-                        {booksLoading ? (
-                            <p className="text-sm text-stone-500 dark:text-stone-400">Loading…</p>
-                        ) : books.length === 0 ? (
-                            <p className="text-sm text-stone-500 dark:text-stone-400">No books yet.</p>
-                        ) : (
-                            <ul className="divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white dark:divide-stone-700 dark:border-stone-700 dark:bg-stone-900">
-                                {books.map((b) => (
-                                    <li
-                                        key={b.id}
-                                        className="flex items-start justify-between gap-4 px-4 py-4 first:rounded-t-xl last:rounded-b-xl"
-                                    >
-                                        <div>
-                                            <p className="font-medium text-stone-900 dark:text-stone-100">{b.title}</p>
-                                            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{b.author}</p>
-                                            {b.libraryUser ? (
-                                                <p className="mt-1 text-xs">
-                                                    <span className="text-stone-400 dark:text-stone-500">Borrowed by </span>
-                                                    <span className="text-stone-600 dark:text-stone-400">
-                                                        {b.libraryUser.name} {b.libraryUser.surname}
-                                                    </span>
-                                                </p>
-                                            ) : null}
-                                            <p className="mt-2 font-mono text-xs text-stone-400 dark:text-stone-500">
-                                                id {b.id}
-                                            </p>
-                                        </div>
-                                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleViewBook(b.id)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                View
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEditBookOpen(b)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                Update
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleDeleteBook(b.id)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
+                    <BookList
+                        books={books}
+                        loading={booksLoading}
+                        onRefresh={() => void loadBooks()}
+                        onViewBook={(id) => void handleViewBook(id)}
+                        onEditBook={handleEditBookOpen}
+                        onDeleteBook={(id) => void handleDeleteBook(id)}
+                    />
                 </>
             ) : null}
 
             {activeTab === 'users' ? (
-                <>
-                    <section className="mb-10 mt-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                            Add a user
-                        </h2>
-                        <form
-                            onSubmit={handleCreateUser}
-                            className="flex flex-col flex-wrap gap-4 sm:flex-row sm:items-end"
-                        >
-                            <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                <span className="text-stone-600 dark:text-stone-400">Name</span>
-                                <input
-                                    type="text"
-                                    value={userName}
-                                    onChange={(ev) => setUserName(ev.target.value)}
-                                    className={inputClass}
-                                    maxLength={255}
-                                    autoComplete="given-name"
-                                />
-                            </label>
-                            <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                                <span className="text-stone-600 dark:text-stone-400">Surname</span>
-                                <input
-                                    type="text"
-                                    value={userSurname}
-                                    onChange={(ev) => setUserSurname(ev.target.value)}
-                                    className={inputClass}
-                                    maxLength={255}
-                                    autoComplete="family-name"
-                                />
-                            </label>
-                            <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm lg:min-w-48">
-                                <span className="text-stone-600 dark:text-stone-400">Email</span>
-                                <input
-                                    type="email"
-                                    value={userEmail}
-                                    onChange={(ev) => setUserEmail(ev.target.value)}
-                                    className={inputClass}
-                                    maxLength={255}
-                                    autoComplete="email"
-                                />
-                            </label>
-                            <button
-                                type="submit"
-                                disabled={
-                                    savingUser ||
-                                    !userName.trim() ||
-                                    !userSurname.trim() ||
-                                    !userEmail.trim()
-                                }
-                                className="shrink-0 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
-                            >
-                                {savingUser ? 'Saving…' : 'Add'}
-                            </button>
-                        </form>
-                    </section>
-
-                    {viewingUserId ? (
-                        <section
-                            className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900"
-                            aria-live="polite"
-                        >
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                                <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                    View user
-                                </h2>
-                                <button
-                                    type="button"
-                                    onClick={closeUserDetail}
-                                    className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                            {detailUserError ? (
-                                <p className="text-sm text-red-700 dark:text-red-200">{detailUserError}</p>
-                            ) : detailUserLoading ? (
-                                <p className="text-sm text-stone-500 dark:text-stone-400">Loading…</p>
-                            ) : detailUser ? (
-                                <div className="space-y-3 text-sm">
-                                    <p>
-                                        <span className="text-stone-500 dark:text-stone-400">Name</span>
-                                        <br />
-                                        <span className="font-medium text-stone-900 dark:text-stone-100">
-                                            {detailUser.name} {detailUser.surname}
-                                        </span>
-                                    </p>
-                                    <p>
-                                        <span className="text-stone-500 dark:text-stone-400">Email</span>
-                                        <br />
-                                        <span className="text-stone-800 dark:text-stone-200">{detailUser.email}</span>
-                                    </p>
-                                    <p className="font-mono text-xs text-stone-500 dark:text-stone-400">
-                                        id {detailUser.id}
-                                    </p>
-                                    <p className="text-xs text-stone-500 dark:text-stone-400">
-                                        Joined {new Date(detailUser.created_at).toLocaleString()}
-                                    </p>
-                                    <div>
-                                        <p className="mb-1 text-stone-500 dark:text-stone-400">Books checked out</p>
-                                        {detailUser.books?.length ? (
-                                            <ul className="list-inside list-disc text-stone-800 dark:text-stone-200">
-                                                {detailUser.books.map((bk) => (
-                                                    <li key={bk.id}>
-                                                        {bk.title} <span className="text-stone-500">— {bk.author}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="text-stone-600 dark:text-stone-400">None.</p>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-stone-500 dark:text-stone-400">No user found for this id.</p>
-                            )}
-                        </section>
-                    ) : null}
-
-                    {editingUserId ? (
-                        <section className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900">
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                                <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                    Update user
-                                </h2>
-                                <button
-                                    type="button"
-                                    onClick={closeUserEdit}
-                                    className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                            <form
-                                onSubmit={handleUpdateUser}
-                                className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end"
-                            >
-                                <label className="flex flex-1 flex-col gap-1.5 text-sm sm:min-w-[140px]">
-                                    <span className="text-stone-600 dark:text-stone-400">Name</span>
-                                    <input
-                                        type="text"
-                                        value={editUserName}
-                                        onChange={(ev) => setEditUserName(ev.target.value)}
-                                        className={inputClass}
-                                        maxLength={255}
-                                        autoComplete="off"
-                                    />
-                                </label>
-                                <label className="flex flex-1 flex-col gap-1.5 text-sm sm:min-w-[140px]">
-                                    <span className="text-stone-600 dark:text-stone-400">Surname</span>
-                                    <input
-                                        type="text"
-                                        value={editUserSurname}
-                                        onChange={(ev) => setEditUserSurname(ev.target.value)}
-                                        className={inputClass}
-                                        maxLength={255}
-                                        autoComplete="off"
-                                    />
-                                </label>
-                                <label className="flex flex-[2] flex-col gap-1.5 text-sm sm:min-w-[200px]">
-                                    <span className="text-stone-600 dark:text-stone-400">Email</span>
-                                    <input
-                                        type="email"
-                                        value={editUserEmail}
-                                        onChange={(ev) => setEditUserEmail(ev.target.value)}
-                                        className={inputClass}
-                                        maxLength={255}
-                                        autoComplete="off"
-                                    />
-                                </label>
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        updateUserSaving ||
-                                        !editUserName.trim() ||
-                                        !editUserSurname.trim() ||
-                                        !editUserEmail.trim()
-                                    }
-                                    className="shrink-0 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
-                                >
-                                    {updateUserSaving ? 'Saving…' : 'Save'}
-                                </button>
-                            </form>
-                            <p className="mt-3 font-mono text-xs text-stone-400 dark:text-stone-500">
-                                id {editingUserId}
-                            </p>
-                        </section>
-                    ) : null}
-
-                    <section>
-                        <div className="mb-4 flex items-center justify-between gap-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                                Users ({usersLoading ? '…' : libraryUsers.length})
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={() => void loadLibraryUsers()}
-                                disabled={usersLoading}
-                                className="text-sm font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900 disabled:no-underline disabled:opacity-50 dark:text-amber-500 dark:hover:text-amber-400"
-                            >
-                                Refresh
-                            </button>
-                        </div>
-
-                        {usersLoading ? (
-                            <p className="text-sm text-stone-500 dark:text-stone-400">Loading…</p>
-                        ) : libraryUsers.length === 0 ? (
-                            <p className="text-sm text-stone-500 dark:text-stone-400">No users yet.</p>
-                        ) : (
-                            <ul className="divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white dark:divide-stone-700 dark:border-stone-700 dark:bg-stone-900">
-                                {libraryUsers.map((u) => (
-                                    <li
-                                        key={u.id}
-                                        className="flex items-start justify-between gap-4 px-4 py-4 first:rounded-t-xl last:rounded-b-xl"
-                                    >
-                                        <div>
-                                            <p className="font-medium text-stone-900 dark:text-stone-100">
-                                                {u.name} {u.surname}
-                                            </p>
-                                            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{u.email}</p>
-                                            <p className="mt-2 font-mono text-xs text-stone-400 dark:text-stone-500">
-                                                id {u.id}
-                                            </p>
-                                        </div>
-                                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleViewUser(u.id)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                View
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEditUserOpen(u)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                Update
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => void handleDeleteUser(u.id)}
-                                                className="rounded-md border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
-                </>
+                <LibraryUserPanel
+                    userName={userName}
+                    userSurname={userSurname}
+                    userEmail={userEmail}
+                    onUserNameChange={setUserName}
+                    onUserSurnameChange={setUserSurname}
+                    onUserEmailChange={setUserEmail}
+                    onCreateUser={handleCreateUser}
+                    savingUser={savingUser}
+                    viewingUserId={viewingUserId}
+                    onCloseUserDetail={closeUserDetail}
+                    detailUser={detailUser}
+                    detailUserLoading={detailUserLoading}
+                    detailUserError={detailUserError}
+                    editingUserId={editingUserId}
+                    editUserName={editUserName}
+                    editUserSurname={editUserSurname}
+                    editUserEmail={editUserEmail}
+                    onEditUserNameChange={setEditUserName}
+                    onEditUserSurnameChange={setEditUserSurname}
+                    onEditUserEmailChange={setEditUserEmail}
+                    onCancelUserEdit={closeUserEdit}
+                    onUpdateUser={handleUpdateUser}
+                    updateUserSaving={updateUserSaving}
+                    libraryUsers={libraryUsers}
+                    usersLoading={usersLoading}
+                    onRefreshUsers={() => void loadLibraryUsers()}
+                    onViewUser={(id) => void handleViewUser(id)}
+                    onEditUserOpen={handleEditUserOpen}
+                    onDeleteUser={(id) => void handleDeleteUser(id)}
+                />
             ) : null}
 
             {activeTab === 'library' ? (
