@@ -1,139 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { graphqlRequest } from './graphqlClient.js';
-
-const BOOKS_QUERY = `
-    query {
-        books {
-            id
-            title
-            author
-            libraryUser {
-                id
-                name
-                surname
-                email
-            }
-        }
-    }
-`;
-
-const BOOK_QUERY = `
-    query Book($id: ID!) {
-        book(id: $id) {
-            id
-            title
-            author
-            libraryUser {
-                id
-                name
-                surname
-                email
-            }
-            created_at
-            updated_at
-        }
-    }
-`;
-
-const CREATE_BOOK_MUTATION = `
-    mutation ($title: String!, $author: String!) {
-        createBook(title: $title, author: $author) {
-            id
-            title
-            author
-        }
-    }
-`;
-
-const UPDATE_BOOK_MUTATION = `
-    mutation ($id: ID!, $title: String!, $author: String!) {
-        updateBook(id: $id, title: $title, author: $author) {
-            id
-            title
-            author
-        }
-    }
-`;
-
-const DELETE_BOOK_MUTATION = `
-    mutation ($id: ID!) {
-        deleteBook(id: $id) {
-            id
-        }
-    }
-`;
-
-const LIBRARY_USERS_QUERY = `
-    query {
-        libraryUsers {
-            id
-            name
-            surname
-            email
-        }
-    }
-`;
-
-const LIBRARY_USER_QUERY = `
-    query LibraryUser($id: ID!) {
-        libraryUser(id: $id) {
-            id
-            name
-            surname
-            email
-            created_at
-            updated_at
-            books {
-                id
-                title
-                author
-            }
-        }
-    }
-`;
-
-const CREATE_LIBRARY_USER_MUTATION = `
-    mutation ($name: String!, $surname: String!, $email: String!) {
-        createLibraryUser(name: $name, surname: $surname, email: $email) {
-            id
-            name
-            surname
-            email
-        }
-    }
-`;
-
-const UPDATE_LIBRARY_USER_MUTATION = `
-    mutation ($id: ID!, $name: String!, $surname: String!, $email: String!) {
-        updateLibraryUser(id: $id, name: $name, surname: $surname, email: $email) {
-            id
-            name
-            surname
-            email
-        }
-    }
-`;
-
-const DELETE_LIBRARY_USER_MUTATION = `
-    mutation ($id: ID!) {
-        deleteLibraryUser(id: $id) {
-            id
-        }
-    }
-`;
-
-const SET_BOOK_LIBRARY_USER_MUTATION = `
-    mutation ($id: ID!, $libraryUserId: ID) {
-        setBookLibraryUser(id: $id, libraryUserId: $libraryUserId) {
-            id
-            libraryUser {
-                id
-                name
-                surname
-            }
-        }
-    }
-`;
+import {
+    BOOKS_QUERY,
+    BOOK_QUERY,
+    CREATE_BOOK_MUTATION,
+    CREATE_LIBRARY_USER_MUTATION,
+    DELETE_BOOK_MUTATION,
+    DELETE_LIBRARY_USER_MUTATION,
+    LIBRARY_USERS_QUERY,
+    LIBRARY_USER_QUERY,
+    SET_BOOK_LIBRARY_USER_MUTATION,
+    UPDATE_BOOK_MUTATION,
+    UPDATE_LIBRARY_USER_MUTATION,
+} from './queries.js';
 
 const tabBtn = (active) =>
     `rounded-t-lg border border-b-0 px-4 py-2 text-sm font-medium transition ${
