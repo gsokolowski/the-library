@@ -5,6 +5,7 @@ import {
     DELETE_LIBRARY_USER_MUTATION,
     LIBRARY_USERS_QUERY,
     LIBRARY_USER_QUERY,
+    SET_BOOK_LIBRARY_USER_MUTATION,
     UPDATE_LIBRARY_USER_MUTATION,
 } from '../queries.js';
 
@@ -31,6 +32,7 @@ export function useLibraryUsers(setError, loadBooks, getLoanDesk) {
     const [editUserSurname, setEditUserSurname] = useState('');
     const [editUserEmail, setEditUserEmail] = useState('');
     const [updateUserSaving, setUpdateUserSaving] = useState(false);
+    const [returningBookId, setReturningBookId] = useState(null);
 
     const loadLibraryUsers = useCallback(async () => {
         setError(null);
@@ -51,6 +53,7 @@ export function useLibraryUsers(setError, loadBooks, getLoanDesk) {
         setDetailUser(null);
         setDetailUserLoading(false);
         setDetailUserError(null);
+        setReturningBookId(null);
     }
 
     function closeUserEdit() {
@@ -131,6 +134,30 @@ export function useLibraryUsers(setError, loadBooks, getLoanDesk) {
         setError(null);
     }
 
+    async function handleReturnBorrowedBook(bookId) {
+        const patronId = viewingUserId;
+        if (!patronId) {
+            return;
+        }
+        setError(null);
+        setDetailUserError(null);
+        setReturningBookId(String(bookId));
+        try {
+            await graphqlRequest(SET_BOOK_LIBRARY_USER_MUTATION, {
+                id: String(bookId),
+                libraryUserId: null,
+            });
+            await loadBooks();
+            const data = await graphqlRequest(LIBRARY_USER_QUERY, { id: patronId });
+            setDetailUser(data.libraryUser ?? null);
+            await loadLibraryUsers();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not return book');
+        } finally {
+            setReturningBookId(null);
+        }
+    }
+
     async function handleUpdateUser(e) {
         e.preventDefault();
         if (
@@ -192,5 +219,7 @@ export function useLibraryUsers(setError, loadBooks, getLoanDesk) {
         handleViewUser,
         handleEditUserOpen,
         handleUpdateUser,
+        handleReturnBorrowedBook,
+        returningBookId,
     };
 }

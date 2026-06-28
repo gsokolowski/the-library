@@ -11,9 +11,18 @@
  *   };
  *   detailLoading: boolean;
  *   detailError: string | null;
+ *   onReturnBook?: (bookId: string) => void | Promise<void>;
+ *   returningBookId?: string | null;
  * }} props
  */
-export default function LibraryUserViewPanel({ onClose, detailUser, detailLoading, detailError }) {
+export default function LibraryUserViewPanel({
+    onClose,
+    detailUser,
+    detailLoading,
+    detailError,
+    onReturnBook,
+    returningBookId,
+}) {
     return (
         <section
             className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-900"
@@ -56,12 +65,31 @@ export default function LibraryUserViewPanel({ onClose, detailUser, detailLoadin
                     <div>
                         <p className="mb-1 text-stone-500 dark:text-stone-400">Books checked out</p>
                         {detailUser.books?.length ? (
-                            <ul className="list-inside list-disc text-stone-800 dark:text-stone-200">
-                                {detailUser.books.map((bk) => (
-                                    <li key={bk.id}>
-                                        {bk.title} <span className="text-stone-500">— {bk.author}</span>
-                                    </li>
-                                ))}
+                            <ul className="space-y-2 text-stone-800 dark:text-stone-200">
+                                {detailUser.books.map((bk) => {
+                                    const bid = String(bk.id);
+                                    const busyHere = returningBookId === bid;
+                                    return (
+                                        <li key={bk.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 px-3 py-2 dark:border-stone-600">
+                                            <span>
+                                                <span className="font-medium">{bk.title}</span>{' '}
+                                                <span className="text-stone-500">— {bk.author}</span>
+                                            </span>
+                                            {onReturnBook ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={returningBookId !== null}
+                                                    onClick={() => void onReturnBook(bid)}
+                                                    className="shrink-0 rounded-md bg-stone-800 px-3 py-1 text-xs font-medium text-white transition hover:bg-stone-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-stone-200 dark:text-stone-900 dark:hover:bg-white"
+                                                    aria-busy={busyHere}
+                                                    aria-label={`Return "${bk.title}" to shelf`}
+                                                >
+                                                    {busyHere ? 'Returning…' : 'Return book'}
+                                                </button>
+                                            ) : null}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         ) : (
                             <p className="text-stone-600 dark:text-stone-400">None.</p>

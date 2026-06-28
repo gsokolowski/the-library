@@ -83,6 +83,9 @@ type Mutation {
 
     """
     Set who is borrowing a book. Pass `libraryUserId: null` to mark the book as returned. If the argument is omitted, the borrower is left unchanged.
+
+    When RabbitMQ is enabled: assigning or changing patron publishes routing key `book.borrowed`; clearing borrower publishes `book.returned`.
+    (`book.updated` is also emitted when anything on the row changes.)
     """
     setBookLibraryUser(
         id: ID! @rules(apply: ["required", "integer", "exists:books,id"])

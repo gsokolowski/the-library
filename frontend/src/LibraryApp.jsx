@@ -47,6 +47,9 @@ export default function LibraryApp() {
         if (tab !== 'library') {
             loan.closeLoanBookDetail();
         }
+        if (tab !== 'users') {
+            users.closeUserDetail();
+        }
     }
 
     return (
@@ -138,6 +141,8 @@ export default function LibraryApp() {
                     onViewUser={(id) => void users.handleViewUser(id)}
                     onEditUserOpen={users.handleEditUserOpen}
                     onDeleteUser={(id) => void users.handleDeleteUser(id)}
+                    onReturnBorrowedBook={(bookId) => void users.handleReturnBorrowedBook(bookId)}
+                    returningBookId={users.returningBookId}
                 />
             ) : null}
 

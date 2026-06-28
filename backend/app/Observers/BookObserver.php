@@ -20,6 +20,26 @@ final class BookObserver
     public function updated(Book $book): void
     {
         $this->publisher()->publish('book.updated', $this->payload($book));
+
+        if ($book->wasChanged('library_user_id')) {
+            $previousId = $book->getOriginal('library_user_id');
+            $currentId = $book->library_user_id;
+
+            if ($currentId !== null) {
+                $borrowPayload = $this->payload($book);
+                if ($previousId !== null && (int) $previousId !== (int) $currentId) {
+                    $borrowPayload['previous_library_user_id'] = (int) $previousId;
+                }
+                $this->publisher()->publish('book.borrowed', $borrowPayload);
+            } elseif ($previousId !== null) {
+                $this->publisher()->publish('book.returned', [
+                    'id' => $book->id,
+                    'previous_library_user_id' => (int) $previousId,
+                    'returned_at' => now()->toIso8601String(),
+                ]);
+            }
+        }
+
         Cache::forget(BookQuery::CACHE_KEY);
     }
 

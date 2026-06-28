@@ -36,6 +36,8 @@ export default function LibraryUserPanel({
     onViewUser,
     onEditUserOpen,
     onDeleteUser,
+    onReturnBorrowedBook,
+    returningBookId,
 }) {
     return (
         <>
@@ -56,6 +58,8 @@ export default function LibraryUserPanel({
                     detailUser={detailUser}
                     detailLoading={detailUserLoading}
                     detailError={detailUserError}
+                    onReturnBook={onReturnBorrowedBook}
+                    returningBookId={returningBookId}
                 />
             ) : null}
 

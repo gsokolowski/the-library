@@ -78,7 +78,7 @@ In `.env`:
 
 - `RABBITMQ_ENABLED=true` and check `RABBITMQ_*` match your broker.
 
-Exchange: **`library.events`** (topic). Routing keys: **`book.created`**, **`book.updated`**, **`book.deleted`**. Messages are persistent JSON.
+Exchange: **`library.events`** (topic). Routing keys: **`book.created`**, **`book.updated`**, **`book.deleted`**, **`book.borrowed`**, **`book.returned`** (borrow/return when `library_user_id` changes). Messages are persistent JSON.
 
 Management UI (guest/guest): http://127.0.0.1:15672  
 
