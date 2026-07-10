@@ -8,11 +8,30 @@
  *     email: string;
  *     created_at: string;
  *     books?: Array<{ id: string; title: string; author: string }>;
+ *     waitlist?: Array<{
+ *       id: string;
+ *       status: string;
+ *       created_at: string;
+ *       book: { id: string; title: string; author: string; library_user_id?: string | null };
+ *     }>;
+ *     notifications?: Array<{
+ *       id: string;
+ *       type: string;
+ *       title: string;
+ *       body: string;
+ *       read_at?: string | null;
+ *       created_at: string;
+ *       book?: { id: string; title: string } | null;
+ *     }>;
  *   };
  *   detailLoading: boolean;
  *   detailError: string | null;
  *   onReturnBook?: (bookId: string) => void | Promise<void>;
  *   returningBookId?: string | null;
+ *   onLeaveWaitlist?: (bookId: string) => void | Promise<void>;
+ *   leavingWaitlistBookId?: string | null;
+ *   onMarkNotificationRead?: (notificationId: string) => void | Promise<void>;
+ *   markingNotificationId?: string | null;
  * }} props
  */
 export default function LibraryUserViewPanel({
@@ -22,6 +41,10 @@ export default function LibraryUserViewPanel({
     detailError,
     onReturnBook,
     returningBookId,
+    onLeaveWaitlist,
+    leavingWaitlistBookId,
+    onMarkNotificationRead,
+    markingNotificationId,
 }) {
     return (
         <section
@@ -30,7 +53,7 @@ export default function LibraryUserViewPanel({
         >
             <div className="mb-4 flex items-start justify-between gap-4">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">
-                    View user
+                    View library user
                 </h2>
                 <button
                     type="button"
@@ -62,6 +85,82 @@ export default function LibraryUserViewPanel({
                     <p className="text-xs text-stone-500 dark:text-stone-400">
                         Joined {new Date(detailUser.created_at).toLocaleString()}
                     </p>
+
+                    <div>
+                        <p className="mb-1 font-medium text-stone-700 dark:text-stone-300">Notifications</p>
+                        {detailUser.notifications?.length ? (
+                            <ul className="space-y-2 text-stone-800 dark:text-stone-200">
+                                {detailUser.notifications.map((n) => {
+                                    const busy = markingNotificationId === String(n.id);
+                                    return (
+                                        <li
+                                            key={n.id}
+                                            className="rounded-md border border-emerald-200 bg-emerald-50/50 px-3 py-2 dark:border-emerald-900/50 dark:bg-emerald-950/30"
+                                        >
+                                            <p className="font-medium">{n.title}</p>
+                                            <p className="text-stone-600 dark:text-stone-400">{n.body}</p>
+                                            <p className="mt-1 text-xs text-stone-500">
+                                                {new Date(n.created_at).toLocaleString()}
+                                            </p>
+                                            {onMarkNotificationRead ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={markingNotificationId !== null}
+                                                    onClick={() => void onMarkNotificationRead(String(n.id))}
+                                                    className="mt-2 rounded-md border border-stone-300 px-2 py-0.5 text-xs font-medium transition hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:hover:bg-stone-800"
+                                                    aria-busy={busy}
+                                                >
+                                                    {busy ? 'Saving…' : 'Mark read'}
+                                                </button>
+                                            ) : null}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        ) : (
+                            <p className="text-stone-600 dark:text-stone-400">No unread notifications.</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <p className="mb-1 font-medium text-stone-700 dark:text-stone-300">Waitlist</p>
+                        {detailUser.waitlist?.length ? (
+                            <ul className="space-y-2 text-stone-800 dark:text-stone-200">
+                                {detailUser.waitlist.map((entry) => {
+                                    const bid = String(entry.book.id);
+                                    const busy = leavingWaitlistBookId === bid;
+                                    return (
+                                        <li
+                                            key={entry.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-stone-200 px-3 py-2 dark:border-stone-600"
+                                        >
+                                            <span>
+                                                <span className="font-medium">{entry.book.title}</span>{' '}
+                                                <span className="text-stone-500">— {entry.book.author}</span>
+                                                <span className="ml-2 text-xs uppercase text-stone-400">
+                                                    {entry.status}
+                                                </span>
+                                            </span>
+                                            {onLeaveWaitlist ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={leavingWaitlistBookId !== null}
+                                                    onClick={() => void onLeaveWaitlist(bid)}
+                                                    className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-xs font-medium transition hover:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:hover:bg-stone-800"
+                                                    aria-busy={busy}
+                                                >
+                                                    {busy ? 'Leaving…' : 'Leave waitlist'}
+                                                </button>
+                                            ) : null}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        ) : (
+                            <p className="text-stone-600 dark:text-stone-400">Not waiting for any books.</p>
+                        )}
+                    </div>
+
                     <div>
                         <p className="mb-1 text-stone-500 dark:text-stone-400">Books checked out</p>
                         {detailUser.books?.length ? (
@@ -97,7 +196,7 @@ export default function LibraryUserViewPanel({
                     </div>
                 </div>
             ) : (
-                <p className="text-sm text-stone-500 dark:text-stone-400">No user found for this id.</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">No library user found for this id.</p>
             )}
         </section>
     );

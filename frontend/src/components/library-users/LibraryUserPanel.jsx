@@ -38,6 +38,10 @@ export default function LibraryUserPanel({
     onDeleteUser,
     onReturnBorrowedBook,
     returningBookId,
+    onLeaveWaitlist,
+    leavingWaitlistBookId,
+    onMarkNotificationRead,
+    markingNotificationId,
 }) {
     return (
         <>
@@ -60,6 +64,10 @@ export default function LibraryUserPanel({
                     detailError={detailUserError}
                     onReturnBook={onReturnBorrowedBook}
                     returningBookId={returningBookId}
+                    onLeaveWaitlist={onLeaveWaitlist}
+                    leavingWaitlistBookId={leavingWaitlistBookId}
+                    onMarkNotificationRead={onMarkNotificationRead}
+                    markingNotificationId={markingNotificationId}
                 />
             ) : null}
 

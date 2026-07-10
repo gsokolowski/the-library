@@ -7,6 +7,8 @@ namespace App\Observers;
 use App\GraphQL\Queries\BookQuery;
 use App\Models\Book;
 use App\Services\RabbitMqPublisher;
+use App\Services\WaitlistOnBorrowHandler;
+use App\Services\WaitlistOnReturnHandler;
 use Illuminate\Support\Facades\Cache;
 
 final class BookObserver
@@ -31,12 +33,19 @@ final class BookObserver
                     $borrowPayload['previous_library_user_id'] = (int) $previousId;
                 }
                 $this->publisher()->publish('book.borrowed', $borrowPayload);
+                if (! $this->rabbitMqEnabled()) {
+                    app(WaitlistOnBorrowHandler::class)->handle((int) $book->id, (int) $currentId);
+                }
             } elseif ($previousId !== null) {
-                $this->publisher()->publish('book.returned', [
+                $returnPayload = [
                     'id' => $book->id,
                     'previous_library_user_id' => (int) $previousId,
                     'returned_at' => now()->toIso8601String(),
-                ]);
+                ];
+                $this->publisher()->publish('book.returned', $returnPayload);
+                if (! $this->rabbitMqEnabled()) {
+                    app(WaitlistOnReturnHandler::class)->handle((int) $book->id);
+                }
             }
         }
 
@@ -67,5 +76,10 @@ final class BookObserver
     private function publisher(): RabbitMqPublisher
     {
         return app(RabbitMqPublisher::class);
+    }
+
+    private function rabbitMqEnabled(): bool
+    {
+        return (bool) config('rabbitmq.enabled', false);
     }
 }

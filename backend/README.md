@@ -80,6 +80,14 @@ In `.env`:
 
 Exchange: **`library.events`** (topic). Routing keys: **`book.created`**, **`book.updated`**, **`book.deleted`**, **`book.borrowed`**, **`book.returned`** (borrow/return when `library_user_id` changes). Messages are persistent JSON.
 
+**Waitlist consumer** (separate terminal, with RabbitMQ enabled):
+
+```bash
+php artisan library:consume-waitlist
+```
+
+Listens on queue **`library.waitlist`** for `book.returned` and `book.borrowed`. On return, notifies the next waiting library user; on borrow, marks their waitlist entry fulfilled. When `RABBITMQ_ENABLED=false`, the same logic runs synchronously in `BookObserver` (used by tests and local dev without a consumer).
+
 Management UI (guest/guest): http://127.0.0.1:15672  
 
 If RabbitMQ is disabled or unreachable, writes still succeed; failures are logged as `rabbitmq.publish_failed`.

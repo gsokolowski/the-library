@@ -22,4 +22,18 @@ class LibraryUser extends Model
     {
         return $this->hasMany(Book::class);
     }
+
+    /** @return HasMany<BookWaitlist, $this> */
+    public function waitlistEntries(): HasMany
+    {
+        return $this->hasMany(BookWaitlist::class)
+            ->whereIn('status', BookWaitlist::ACTIVE_STATUSES)
+            ->orderBy('created_at');
+    }
+
+    /** @return HasMany<LibraryUserNotification, $this> */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(LibraryUserNotification::class)->orderByDesc('created_at');
+    }
 }

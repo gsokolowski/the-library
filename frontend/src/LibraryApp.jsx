@@ -7,6 +7,7 @@ import AppHeader from './components/layout/AppHeader.jsx';
 import PrimaryTabs from './components/layout/PrimaryTabs.jsx';
 import LibraryLoansTab from './components/library/LibraryLoansTab.jsx';
 import LibraryUserPanel from './components/library-users/LibraryUserPanel.jsx';
+import NotificationToast from './components/library-users/NotificationToast.jsx';
 import { useBooks } from './hooks/useBooks.js';
 import { useLibraryUsers } from './hooks/useLibraryUsers.js';
 import { useLoanDesk } from './hooks/useLoanDesk.js';
@@ -16,8 +17,8 @@ export default function LibraryApp() {
     const [error, setError] = useState(null);
 
     const loanDeskGetterRef = useRef(() => ({
-        selectedPatronId: null,
-        setSelectedPatronId: () => {},
+        selectedLibraryUserId: null,
+        setSelectedLibraryUserId: () => {},
     }));
 
     const books = useBooks(setError);
@@ -28,11 +29,12 @@ export default function LibraryApp() {
         books: books.books,
         loadBooks: books.loadBooks,
         libraryUsers: users.libraryUsers,
+        joinWaitlist: users.handleJoinWaitlist,
     });
 
     loanDeskGetterRef.current = () => ({
-        selectedPatronId: loan.selectedPatronId,
-        setSelectedPatronId: loan.setSelectedPatronId,
+        selectedLibraryUserId: loan.selectedPatronId,
+        setSelectedLibraryUserId: loan.setSelectedPatronId,
     });
 
     useEffect(() => {
@@ -56,6 +58,13 @@ export default function LibraryApp() {
         <div className="mx-auto max-w-6xl px-4 py-10">
             <AppHeader />
             <PrimaryTabs activeTab={activeTab} onTabChange={switchTab} />
+
+            {users.notificationToast ? (
+                <NotificationToast
+                    message={users.notificationToast.message}
+                    onDismiss={() => void users.dismissNotificationToast()}
+                />
+            ) : null}
 
             {error ? (
                 <div
@@ -143,6 +152,10 @@ export default function LibraryApp() {
                     onDeleteUser={(id) => void users.handleDeleteUser(id)}
                     onReturnBorrowedBook={(bookId) => void users.handleReturnBorrowedBook(bookId)}
                     returningBookId={users.returningBookId}
+                    onLeaveWaitlist={(bookId) => void users.handleLeaveWaitlist(bookId)}
+                    leavingWaitlistBookId={users.leavingWaitlistBookId}
+                    onMarkNotificationRead={(id) => void users.handleMarkNotificationRead(id)}
+                    markingNotificationId={users.markingNotificationId}
                 />
             ) : null}
 
@@ -172,6 +185,8 @@ export default function LibraryApp() {
                     loanDetailError={loan.loanDetailError}
                     onCloseLoanDetail={loan.closeLoanBookDetail}
                     onViewLoanBook={(id) => void loan.handleViewLoanBook(id)}
+                    waitlistJoiningBookId={loan.waitlistJoiningBookId}
+                    onJoinWaitlist={(bookId) => void loan.handleJoinWaitlistForBook(bookId)}
                 />
             ) : null}
         </div>

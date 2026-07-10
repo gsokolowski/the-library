@@ -8,8 +8,9 @@ import { BOOK_QUERY, SET_BOOK_LIBRARY_USER_MUTATION } from '../queries.js';
  * @param {unknown[]} opts.books
  * @param {() => Promise<void>} opts.loadBooks
  * @param {Array<{ id: string | number; name: string; surname: string; email: string }>} opts.libraryUsers
+ * @param {(bookId: string | number, libraryUserId: string) => Promise<void>} [opts.joinWaitlist]
  */
-export function useLoanDesk({ setError, books, loadBooks, libraryUsers }) {
+export function useLoanDesk({ setError, books, loadBooks, libraryUsers, joinWaitlist }) {
     const [userSearch, setUserSearch] = useState('');
     const [selectedPatronId, setSelectedPatronId] = useState(null);
     const [selectedBookIds, setSelectedBookIds] = useState(() => ({}));
@@ -19,6 +20,7 @@ export function useLoanDesk({ setError, books, loadBooks, libraryUsers }) {
     const [loanDetailBook, setLoanDetailBook] = useState(null);
     const [loanDetailLoading, setLoanDetailLoading] = useState(false);
     const [loanDetailError, setLoanDetailError] = useState(null);
+    const [waitlistJoiningBookId, setWaitlistJoiningBookId] = useState(null);
 
     const filteredPatrons = useMemo(() => {
         const q = userSearch.trim().toLowerCase();
@@ -132,6 +134,22 @@ export function useLoanDesk({ setError, books, loadBooks, libraryUsers }) {
         }
     }
 
+    async function handleJoinWaitlistForBook(bookId) {
+        if (!selectedPatronId || !joinWaitlist) {
+            return;
+        }
+        const sid = String(bookId);
+        setWaitlistJoiningBookId(sid);
+        setError(null);
+        try {
+            await joinWaitlist(sid, selectedPatronId);
+        } catch {
+            // Error surfaced by joinWaitlist / setError
+        } finally {
+            setWaitlistJoiningBookId(null);
+        }
+    }
+
     return {
         userSearch,
         setUserSearch,
@@ -153,5 +171,7 @@ export function useLoanDesk({ setError, books, loadBooks, libraryUsers }) {
         toggleBookSelect,
         handleAssignBooksToPatron,
         handleClearBorrowersForSelectedBooks,
+        waitlistJoiningBookId,
+        handleJoinWaitlistForBook,
     };
 }

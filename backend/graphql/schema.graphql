@@ -10,7 +10,7 @@ type Query {
     "Single book by primary key."
     book(id: ID! @eq): Book @find(model: "Book")
 
-    "Patrons (name, surname, email) who can borrow books — distinct from app login accounts."
+    "Library users (name, surname, email) who can borrow books — distinct from app login accounts."
     libraryUsers: [LibraryUser!]! @all(model: "LibraryUser")
 
     libraryUser(id: ID! @eq): LibraryUser @find(model: "LibraryUser")
@@ -24,6 +24,9 @@ type LibraryUser {
     created_at: DateTime!
     updated_at: DateTime!
     books: [Book!]! @hasMany(relation: "books")
+    waitlist: [BookWaitlistEntry!]! @field(resolver: "App\\GraphQL\\Queries\\LibraryUserFields@waitlist")
+    notifications(unreadOnly: Boolean = false): [LibraryUserNotification!]!
+        @field(resolver: "App\\GraphQL\\Queries\\LibraryUserFields@notifications")
 }
 
 type Book {
@@ -34,6 +37,28 @@ type Book {
     libraryUser: LibraryUser @belongsTo(relation: "libraryUser")
     created_at: DateTime!
     updated_at: DateTime!
+    waitlistCount: Int! @field(resolver: "App\\GraphQL\\Queries\\BookWaitlistFields@waitlistCount")
+    onWaitlist(libraryUserId: ID!): Boolean! @field(resolver: "App\\GraphQL\\Queries\\BookWaitlistFields@onWaitlist")
+}
+
+type BookWaitlistEntry @model(class: "BookWaitlist") {
+    id: ID!
+    book: Book! @belongsTo(relation: "book")
+    libraryUser: LibraryUser! @belongsTo(relation: "libraryUser")
+    status: String!
+    created_at: DateTime!
+    notified_at: DateTime
+    fulfilled_at: DateTime
+}
+
+type LibraryUserNotification @model(class: "LibraryUserNotification") {
+    id: ID!
+    type: String!
+    book: Book @belongsTo(relation: "book")
+    title: String!
+    body: String!
+    read_at: DateTime
+    created_at: DateTime!
 }
 
 type Mutation {
@@ -63,7 +88,7 @@ type Mutation {
     deleteBook(id: ID! @whereKey @rules(apply: ["required", "integer", "exists:books,id"])): Book @delete(model: "Book")
 
     """
-    Create a library patron (borrower). Not the same as the Laravel `users` auth table.
+    Create a library user (borrower). Not the same as the Laravel `users` auth table.
     """
     createLibraryUser(
         name: String! @rules(apply: ["required", "string", "max:255"])
@@ -84,11 +109,32 @@ type Mutation {
     """
     Set who is borrowing a book. Pass `libraryUserId: null` to mark the book as returned. If the argument is omitted, the borrower is left unchanged.
 
-    When RabbitMQ is enabled: assigning or changing patron publishes routing key `book.borrowed`; clearing borrower publishes `book.returned`.
+    When RabbitMQ is enabled: assigning or changing library user publishes routing key `book.borrowed`; clearing borrower publishes `book.returned`.
     (`book.updated` is also emitted when anything on the row changes.)
     """
     setBookLibraryUser(
         id: ID! @rules(apply: ["required", "integer", "exists:books,id"])
         libraryUserId: ID @rules(apply: ["nullable", "integer", "exists:library_users,id"])
     ): Book @field(resolver: "SetBookLibraryUser")
+
+    """
+    Join the waitlist for a book that is currently checked out.
+    """
+    joinBookWaitlist(
+        bookId: ID! @rules(apply: ["required", "integer", "exists:books,id"])
+        libraryUserId: ID! @rules(apply: ["required", "integer", "exists:library_users,id"])
+    ): BookWaitlistEntry! @field(resolver: "JoinBookWaitlist")
+
+    """
+    Leave the waitlist for a book.
+    """
+    leaveBookWaitlist(
+        bookId: ID! @rules(apply: ["required", "integer", "exists:books,id"])
+        libraryUserId: ID! @rules(apply: ["required", "integer", "exists:library_users,id"])
+    ): Boolean! @field(resolver: "LeaveBookWaitlist")
+
+    """
+    Mark one or more library user notifications as read.
+    """
+    markNotificationsRead(ids: [ID!]!): [LibraryUserNotification!]! @field(resolver: "MarkNotificationsRead")
 }

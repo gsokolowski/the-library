@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\Models\Book;
 use App\Observers\BookObserver;
 use App\Services\RabbitMqPublisher;
+use App\Services\RabbitMqWaitlistConsumer;
+use App\Services\WaitlistOnBorrowHandler;
+use App\Services\WaitlistOnReturnHandler;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(RabbitMqPublisher::class, function ($app): RabbitMqPublisher {
             return new RabbitMqPublisher($app['config']->get('rabbitmq'));
+        });
+
+        $this->app->singleton(RabbitMqWaitlistConsumer::class, function ($app): RabbitMqWaitlistConsumer {
+            return new RabbitMqWaitlistConsumer(
+                $app['config']->get('rabbitmq'),
+                $app->make(WaitlistOnReturnHandler::class),
+                $app->make(WaitlistOnBorrowHandler::class),
+            );
         });
     }
 

@@ -6,6 +6,7 @@ export const BOOKS_QUERY = `
             id
             title
             author
+            waitlistCount
             libraryUser {
                 id
                 name
@@ -87,6 +88,29 @@ export const LIBRARY_USER_QUERY = `
                 title
                 author
             }
+            waitlist {
+                id
+                status
+                created_at
+                book {
+                    id
+                    title
+                    author
+                    library_user_id
+                }
+            }
+            notifications(unreadOnly: true) {
+                id
+                type
+                title
+                body
+                read_at
+                created_at
+                book {
+                    id
+                    title
+                }
+            }
         }
     }
 `;
@@ -130,6 +154,31 @@ export const SET_BOOK_LIBRARY_USER_MUTATION = `
                 name
                 surname
             }
+        }
+    }
+`;
+
+export const JOIN_BOOK_WAITLIST_MUTATION = `
+    mutation ($bookId: ID!, $libraryUserId: ID!) {
+        joinBookWaitlist(bookId: $bookId, libraryUserId: $libraryUserId) {
+            id
+            status
+            book { id title }
+        }
+    }
+`;
+
+export const LEAVE_BOOK_WAITLIST_MUTATION = `
+    mutation ($bookId: ID!, $libraryUserId: ID!) {
+        leaveBookWaitlist(bookId: $bookId, libraryUserId: $libraryUserId)
+    }
+`;
+
+export const MARK_NOTIFICATIONS_READ_MUTATION = `
+    mutation ($ids: [ID!]!) {
+        markNotificationsRead(ids: $ids) {
+            id
+            read_at
         }
     }
 `;

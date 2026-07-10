@@ -29,16 +29,18 @@ export default function LibraryLoansTab({
     loanDetailError,
     onCloseLoanDetail,
     onViewLoanBook,
+    waitlistJoiningBookId,
+    onJoinWaitlist,
 }) {
     return (
         <section className="mt-6 space-y-8">
             <p className="text-sm text-stone-600 dark:text-stone-400">
-                Search for a patron and select them, then tick available books and use{' '}
+                Search for a library user and select them, then tick available books and use{' '}
                 <strong className="font-medium text-stone-800 dark:text-stone-300">Assign</strong>.
                 Borrowed titles move to{' '}
                 <strong className="font-medium text-stone-800 dark:text-stone-300">On loan</strong>; tick those and use{' '}
                 <strong className="font-medium text-stone-800 dark:text-stone-300">Clear borrower</strong> to return them
-                to the shelf.
+                to the shelf. For books checked out to someone else, use <strong>Join waitlist</strong>.
             </p>
 
             <div>
@@ -56,8 +58,8 @@ export default function LibraryLoansTab({
                 <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                     {selectedPatronId ? (
                         <>
-                            Selected patron id <span className="font-mono">{selectedPatronId}</span> — choose available
-                            books, then Assign.
+                            Selected library user id <span className="font-mono">{selectedPatronId}</span> — choose
+                            available books, then Assign.
                         </>
                     ) : (
                         <>Click a row to select who is borrowing.</>
@@ -181,7 +183,8 @@ export default function LibraryLoansTab({
                         On loan ({booksLoading ? '…' : borrowedBooks.length})
                     </h2>
                     <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                        Select here to return books (clear borrower). Use View to see full patron details.
+                        Select here to return books (clear borrower). Join waitlist when another library user has the
+                        book. Use View for loan details.
                     </p>
                 </div>
 
@@ -254,6 +257,13 @@ export default function LibraryLoansTab({
                     <ul className="divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white dark:divide-stone-700 dark:border-stone-700 dark:bg-stone-900">
                         {borrowedBooks.map((b) => {
                             const sid = String(b.id);
+                            const borrowerId = b.libraryUser ? String(b.libraryUser.id) : null;
+                            const canJoinWaitlist =
+                                selectedPatronId &&
+                                borrowerId &&
+                                selectedPatronId !== borrowerId &&
+                                onJoinWaitlist;
+                            const joining = waitlistJoiningBookId === sid;
                             return (
                                 <li
                                     key={b.id}
@@ -274,12 +284,28 @@ export default function LibraryLoansTab({
                                             <span className="text-stone-600 dark:text-stone-400">
                                                 {b.libraryUser.name} {b.libraryUser.surname}
                                             </span>
+                                            {b.waitlistCount > 0 ? (
+                                                <span className="ml-2 text-stone-400">
+                                                    · {b.waitlistCount} waiting
+                                                </span>
+                                            ) : null}
                                         </p>
                                         <p className="mt-1 font-mono text-xs text-stone-400 dark:text-stone-500">
                                             id {b.id}
                                         </p>
                                     </div>
-                                    <div className="shrink-0">
+                                    <div className="flex shrink-0 flex-col gap-2">
+                                        {canJoinWaitlist ? (
+                                            <button
+                                                type="button"
+                                                disabled={waitlistJoiningBookId !== null}
+                                                onClick={() => void onJoinWaitlist(b.id)}
+                                                className="rounded-md bg-amber-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-amber-950 disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950"
+                                                aria-busy={joining}
+                                            >
+                                                {joining ? 'Joining…' : 'Join waitlist'}
+                                            </button>
+                                        ) : null}
                                         <button
                                             type="button"
                                             onClick={() => void onViewLoanBook(b.id)}
