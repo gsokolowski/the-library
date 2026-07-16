@@ -182,3 +182,16 @@ export const MARK_NOTIFICATIONS_READ_MUTATION = `
         }
     }
 `;
+
+export const CIRCULATION_EVENTS_QUERY = `
+    query CirculationEvents($limit: Int) {
+        circulationEvents(limit: $limit) {
+            id
+            kind
+            occurred_at
+            book_title
+            patron_name
+            summary
+        }
+    }
+`;

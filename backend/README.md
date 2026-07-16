@@ -88,6 +88,13 @@ php artisan library:consume-waitlist
 
 Listens on queue **`library.waitlist`** for `book.returned` and `book.borrowed`. On return, notifies the next waiting library user; on borrow, marks their waitlist entry fulfilled. When `RABBITMQ_ENABLED=false`, the same logic runs synchronously in `BookObserver` (used by tests and local dev without a consumer).
 
+**Circulation (desk activity) consumer** (another terminal):
+
+```bash
+php artisan library:consume-circulation
+```
+
+Listens on queue **`library.circulation`** for the same borrow/return keys and appends rows to **`circulation_events`** (queried as GraphQL `circulationEvents`). When RabbitMQ is off, `BookObserver` writes those rows synchronously. The Library tab shows a **Recent activity** panel fed by that query.
 Management UI (guest/guest): http://127.0.0.1:15672  
 
 If RabbitMQ is disabled or unreachable, writes still succeed; failures are logged as `rabbitmq.publish_failed`.

@@ -14,6 +14,12 @@ type Query {
     libraryUsers: [LibraryUser!]! @all(model: "LibraryUser")
 
     libraryUser(id: ID! @eq): LibraryUser @find(model: "LibraryUser")
+
+    """
+    Recent desk activity (borrow / return), newest first. Fed by RabbitMQ when enabled, otherwise written synchronously from BookObserver.
+    """
+    circulationEvents(limit: Int = 30): [CirculationEvent!]!
+        @field(resolver: "App\\GraphQL\\Queries\\CirculationEventsQuery")
 }
 
 type LibraryUser {
@@ -58,6 +64,18 @@ type LibraryUserNotification @model(class: "LibraryUserNotification") {
     title: String!
     body: String!
     read_at: DateTime
+    created_at: DateTime!
+}
+
+type CirculationEvent @model(class: "CirculationEvent") {
+    id: ID!
+    kind: String!
+    occurred_at: DateTime!
+    book_id: ID
+    book_title: String!
+    library_user_id: ID
+    patron_name: String
+    summary: String! @field(resolver: "App\\GraphQL\\Queries\\CirculationEventFields@summary")
     created_at: DateTime!
 }
 
@@ -110,6 +128,7 @@ type Mutation {
     Set who is borrowing a book. Pass `libraryUserId: null` to mark the book as returned. If the argument is omitted, the borrower is left unchanged.
 
     When RabbitMQ is enabled: assigning or changing library user publishes routing key `book.borrowed`; clearing borrower publishes `book.returned`.
+    Those events also feed the desk activity timeline (`circulationEvents`) via the circulation consumer (or synchronously when RabbitMQ is off).
     (`book.updated` is also emitted when anything on the row changes.)
     """
     setBookLibraryUser(

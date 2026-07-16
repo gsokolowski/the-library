@@ -1,4 +1,5 @@
 import { inputClass } from '../ui/styles.js';
+import RecentActivityPanel from './RecentActivityPanel.jsx';
 
 /**
  * Library tab: select patron, assign shelf copies, clear borrowers, loan detail.
@@ -31,17 +32,28 @@ export default function LibraryLoansTab({
     onViewLoanBook,
     waitlistJoiningBookId,
     onJoinWaitlist,
+    activityEvents = [],
+    activityLoading = false,
+    activityError = null,
 }) {
     return (
         <section className="mt-6 space-y-8">
-            <p className="text-sm text-stone-600 dark:text-stone-400">
-                Search for a library user and select them, then tick available books and use{' '}
-                <strong className="font-medium text-stone-800 dark:text-stone-300">Assign</strong>.
-                Borrowed titles move to{' '}
-                <strong className="font-medium text-stone-800 dark:text-stone-300">On loan</strong>; tick those and use{' '}
-                <strong className="font-medium text-stone-800 dark:text-stone-300">Clear borrower</strong> to return them
-                to the shelf. For books checked out to someone else, use <strong>Join waitlist</strong>.
-            </p>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start">
+                <p className="text-sm text-stone-600 dark:text-stone-400">
+                    Search for a library user and select them, then tick available books and use{' '}
+                    <strong className="font-medium text-stone-800 dark:text-stone-300">Assign</strong>.
+                    Borrowed titles move to{' '}
+                    <strong className="font-medium text-stone-800 dark:text-stone-300">On loan</strong>; tick those and
+                    use{' '}
+                    <strong className="font-medium text-stone-800 dark:text-stone-300">Clear borrower</strong> to return
+                    them to the shelf. For books checked out to someone else, use <strong>Join waitlist</strong>.
+                </p>
+                <RecentActivityPanel
+                    events={activityEvents}
+                    loading={activityLoading}
+                    error={activityError}
+                />
+            </div>
 
             <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-800">

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Book;
 use App\Observers\BookObserver;
+use App\Services\CirculationFeedHandler;
+use App\Services\RabbitMqCirculationConsumer;
 use App\Services\RabbitMqPublisher;
 use App\Services\RabbitMqWaitlistConsumer;
 use App\Services\WaitlistOnBorrowHandler;
@@ -26,6 +28,13 @@ class AppServiceProvider extends ServiceProvider
                 $app['config']->get('rabbitmq'),
                 $app->make(WaitlistOnReturnHandler::class),
                 $app->make(WaitlistOnBorrowHandler::class),
+            );
+        });
+
+        $this->app->singleton(RabbitMqCirculationConsumer::class, function ($app): RabbitMqCirculationConsumer {
+            return new RabbitMqCirculationConsumer(
+                $app['config']->get('rabbitmq'),
+                $app->make(CirculationFeedHandler::class),
             );
         });
     }

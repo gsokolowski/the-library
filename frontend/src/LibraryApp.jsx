@@ -9,6 +9,7 @@ import LibraryLoansTab from './components/library/LibraryLoansTab.jsx';
 import LibraryUserPanel from './components/library-users/LibraryUserPanel.jsx';
 import NotificationToast from './components/library-users/NotificationToast.jsx';
 import { useBooks } from './hooks/useBooks.js';
+import { useCirculationEvents } from './hooks/useCirculationEvents.js';
 import { useLibraryUsers } from './hooks/useLibraryUsers.js';
 import { useLoanDesk } from './hooks/useLoanDesk.js';
 
@@ -20,9 +21,12 @@ export default function LibraryApp() {
         selectedLibraryUserId: null,
         setSelectedLibraryUserId: () => {},
     }));
+    const circulationRefreshRef = useRef(() => {});
 
     const books = useBooks(setError);
     const users = useLibraryUsers(setError, books.loadBooks, () => loanDeskGetterRef.current());
+    const circulation = useCirculationEvents(activeTab === 'library');
+    circulationRefreshRef.current = circulation.refresh;
 
     const loan = useLoanDesk({
         setError,
@@ -30,6 +34,7 @@ export default function LibraryApp() {
         loadBooks: books.loadBooks,
         libraryUsers: users.libraryUsers,
         joinWaitlist: users.handleJoinWaitlist,
+        onDeskActivityChange: () => circulationRefreshRef.current(),
     });
 
     loanDeskGetterRef.current = () => ({
@@ -187,6 +192,9 @@ export default function LibraryApp() {
                     onViewLoanBook={(id) => void loan.handleViewLoanBook(id)}
                     waitlistJoiningBookId={loan.waitlistJoiningBookId}
                     onJoinWaitlist={(bookId) => void loan.handleJoinWaitlistForBook(bookId)}
+                    activityEvents={circulation.events}
+                    activityLoading={circulation.loading}
+                    activityError={circulation.error}
                 />
             ) : null}
         </div>

@@ -9,8 +9,9 @@ import { BOOK_QUERY, SET_BOOK_LIBRARY_USER_MUTATION } from '../queries.js';
  * @param {() => Promise<void>} opts.loadBooks
  * @param {Array<{ id: string | number; name: string; surname: string; email: string }>} opts.libraryUsers
  * @param {(bookId: string | number, libraryUserId: string) => Promise<void>} [opts.joinWaitlist]
+ * @param {() => void | Promise<void>} [opts.onDeskActivityChange]
  */
-export function useLoanDesk({ setError, books, loadBooks, libraryUsers, joinWaitlist }) {
+export function useLoanDesk({ setError, books, loadBooks, libraryUsers, joinWaitlist, onDeskActivityChange }) {
     const [userSearch, setUserSearch] = useState('');
     const [selectedPatronId, setSelectedPatronId] = useState(null);
     const [selectedBookIds, setSelectedBookIds] = useState(() => ({}));
@@ -100,6 +101,7 @@ export function useLoanDesk({ setError, books, loadBooks, libraryUsers, joinWait
             );
             setSelectedBookIds({});
             await loadBooks();
+            await onDeskActivityChange?.();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not assign books');
         } finally {
@@ -127,6 +129,7 @@ export function useLoanDesk({ setError, books, loadBooks, libraryUsers, joinWait
                 closeLoanBookDetail();
             }
             await loadBooks();
+            await onDeskActivityChange?.();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Could not update books');
         } finally {
